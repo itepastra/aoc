@@ -1,0 +1,56 @@
+mod utils;
+mod day1;
+mod day2;
+mod day3;
+mod day4;
+mod day5;
+mod day6;
+mod day7;
+mod day8;
+mod day9;
+mod day10;
+mod day11;
+mod day12;
+mod day13;
+mod day14;
+mod day15;
+mod day16;
+mod day17;
+mod day18;
+mod day19;
+mod day20;
+mod day21;
+mod day22;
+mod day23;
+mod day24;
+mod day25;
+use std::cmp::max;
+
+fn main() {
+    crate::day1::day();
+    crate::day2::day();
+    crate::day3::day();
+    crate::day4::day();
+    crate::day5::day();
+    crate::day6::day();
+    crate::day7::day();
+    crate::day8::day();
+    crate::day9::day();
+    crate::day10::day();
+    crate::day11::day();
+    crate::day12::day();
+    crate::day13::day();
+    crate::day14::day();
+    crate::day15::day();
+    crate::day16::day();
+    crate::day17::day();
+    crate::day18::day();
+    crate::day19::day();
+    crate::day20::day();
+    crate::day21::day();
+    crate::day22::day();
+    crate::day23::day();
+    crate::day24::day();
+    crate::day25::day();
+}
+
