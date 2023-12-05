@@ -67,21 +67,13 @@ fn dayp2() {
             }
         }
 
-        println!("step seeds, amount: {}", seeds.len());
         let soils = do_block_range(&mut lines, seeds);
-        println!("step soils, amount: {}", soils.len());
         let fertilizers = do_block_range(&mut lines, soils);
-        println!("step fertilizers");
         let waters = do_block_range(&mut lines, fertilizers);
-        println!("step waters");
         let lights = do_block_range(&mut lines, waters);
-        println!("step lights");
         let temperatures = do_block_range(&mut lines, lights);
-        println!("step temperatures");
         let humidities = do_block_range(&mut lines, temperatures);
-        println!("step humidities");
         let locations = do_block_range(&mut lines, humidities);
-        println!("step locations");
         println!(
             "day 5 part 2: {}",
             locations.iter().map(|r| r.from).min().unwrap()
@@ -99,25 +91,16 @@ fn do_range_map(map_vec: &Vec<(u64, u64, u64)>, val: &Range, outvec: &mut Vec<Ra
             let end = src + len;
             match (sr.from >= *src, sr.from < end, sr.to > *src, sr.to <= end) {
                 (true, true, true, true) => {
-                    println!(
-                        "{:?} completely in range {}, {}, so it's easy",
-                        sr, src, end
-                    );
                     let new_range = Range {
                         from: sr.from - src + dest,
                         to: sr.to - src + dest,
                     };
                     still_range = None;
-                    println!(
-                        "range became {:?} (dest is {}), still_range {:?}",
-                        new_range, dest, still_range
-                    );
                     outvec.push(new_range);
                 }
                 (true, false, true, false) => {} // fully to the right
                 (false, true, false, true) => {} // fully to the left
                 (true, true, true, false) => {
-                    println!("{:?} start is in range {}, {} but end is not", sr, src, end);
                     let new_range = Range {
                         from: sr.from - src + dest,
                         to: dest + len,
@@ -126,14 +109,9 @@ fn do_range_map(map_vec: &Vec<(u64, u64, u64)>, val: &Range, outvec: &mut Vec<Ra
                         from: end,
                         to: sr.to,
                     });
-                    println!(
-                        "range became {:?} (dest is {}), still_range {:?}",
-                        new_range, dest, still_range
-                    );
                     outvec.push(new_range);
                 }
                 (false, true, true, true) => {
-                    println!("{:?} end is in range {}, {} but start is not", sr, src, end);
                     let new_range = Range {
                         from: *dest,
                         to: dest + sr.to - src,
@@ -142,37 +120,24 @@ fn do_range_map(map_vec: &Vec<(u64, u64, u64)>, val: &Range, outvec: &mut Vec<Ra
                         from: sr.from,
                         to: *src,
                     });
-                    println!(
-                        "range became {:?} (dest is {}), still_range {:?}",
-                        new_range, dest, still_range
-                    );
                     outvec.push(new_range);
                 }
                 (false, true, true, false) => {
-                    println!(
-                        "{:?} start is before range {}, {} end is after",
-                        sr, src, end
-                    );
                     let new_range = Range {
                         from: *dest,
                         to: dest + len,
                     };
-                    println!("Adding {:?} for sure", new_range);
                     outvec.push(new_range);
                     let left_range = Range {
                         from: sr.from,
                         to: *src,
                     };
-                    println!("Adding Left part {:?}", left_range);
                     do_range_map(map_vec, &left_range, outvec);
-                    println!("Added Left part");
                     let right_range = Range {
                         from: end,
                         to: sr.to,
                     };
-                    println!("Adding Right part {:?}", right_range);
                     do_range_map(map_vec, &right_range, outvec);
-                    println!("Added Right part");
                     still_range = None;
                 }
                 (false, true, false, false) => {
@@ -195,16 +160,11 @@ fn do_range_map(map_vec: &Vec<(u64, u64, u64)>, val: &Range, outvec: &mut Vec<Ra
                 | (true, false, true, true)
                 | (true, false, false, false)
                 | (true, true, false, false) => {
-                    println!(
-                        "Impossible, to is bigger than from {:?}, range is {},{}",
-                        sr, src, end
-                    );
                     todo!()
                 }
             };
         }
     }
-    println!("left with {:?}", still_range);
     if let Some(sr) = still_range {
         outvec.push(sr);
     }
@@ -223,10 +183,9 @@ fn do_block_range(lines: &mut std::io::Lines<BufReader<File>>, in_vec: Vec<Range
         }
     }
 
-    for (i, val) in in_vec.iter().enumerate() {
+    for val in in_vec.iter() {
         do_range_map(&map_vec, val, &mut outvec);
     }
-    println!("current ranges: {:?}", outvec);
     return outvec;
 }
 
