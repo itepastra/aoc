@@ -10,17 +10,11 @@ fn dayp1() {
         let mut total = 0;
         for line in lines {
             if let Ok(ip) = line {
-                //println!("{}", ip);
                 if let Some(r) = ip.as_str().strip_prefix("Card ") {
                     if let Some((_, s)) = r.split_once(": ") {
                         if let Some((win, mine)) = s.split_once(" | ") {
                             let spps = win.split(" ").filter(|p| p != &"");
                             let ppps = mine.split(" ").filter(|p| p != &"");
-                            // println!(
-                            //     "{:?}, {:?}",
-                            //     spps.clone().collect::<Vec<_>>(),
-                            //     ppps.clone().collect::<Vec<_>>()
-                            // );
                             let mut points = None;
                             for ele in ppps {
                                 for chk in spps.clone() {
@@ -32,7 +26,6 @@ fn dayp1() {
                                     }
                                 }
                             }
-                            //println!("{:?}", points);
                             total += points.unwrap_or(0);
                         }
                     }
@@ -118,9 +111,7 @@ fn dayp2() {
             total += cc.amount;
             let w = win_amt(cc);
             if w > 0 {
-                println!("card {} won: {} tickets on {} cards", cn, w, ca);
                 for off in 0..w {
-                    println!("adding {} to {}", ca, cidx+off+1);
                     let co = &mut (cards[cidx + off+1]);
                     co.amount = co.amount + ca;
                 }

@@ -71,7 +71,6 @@ fn check_gear(chars: &Vec<Vec<char>>, line_idx: usize, char_idx: usize) -> (bool
                     Some(a) if a != n1 && a != n2 => {
                         n2 = n1;
                         n1 = a;
-                        println!("new n1, n2: {} {}", n1, n2);
                     },
                     _ => {}
                 }

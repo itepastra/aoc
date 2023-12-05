@@ -1,3 +1,263 @@
-pub fn day() {
+use std::{fs::File, io::BufReader};
 
+use crate::utils::read_lines;
+
+pub fn day() {
+    dayp1();
+    dayp2();
+}
+
+#[derive(Debug, Clone)]
+struct Range {
+    from: u64,
+    to: u64,
+}
+
+fn dayp1() {
+    if let Ok(mut lines) = read_lines("data/day5.txt") {
+        let waa: Vec<u64>;
+        if let Some(Ok(fst)) = lines.next() {
+            waa = fst
+                .strip_prefix("seeds: ")
+                .unwrap_or("")
+                .split(" ")
+                .map(|s| s.parse().unwrap_or(0))
+                .collect();
+        } else {
+            waa = Vec::new();
+        }
+
+        let soils = do_block(&mut lines, waa);
+        let fertilizers = do_block(&mut lines, soils);
+        let waters = do_block(&mut lines, fertilizers);
+        let lights = do_block(&mut lines, waters);
+        let temperatures = do_block(&mut lines, lights);
+        let humidities = do_block(&mut lines, temperatures);
+        let locations = do_block(&mut lines, humidities);
+        println!("day 5 part 1: {}", locations.iter().min().unwrap());
+    }
+}
+
+fn dayp2() {
+    if let Ok(mut lines) = read_lines("data/day5.txt") {
+        let waa: Vec<u64>;
+        if let Some(Ok(fst)) = lines.next() {
+            waa = fst
+                .strip_prefix("seeds: ")
+                .unwrap_or("")
+                .split(" ")
+                .map(|s| s.parse().unwrap_or(0))
+                .collect();
+        } else {
+            waa = Vec::new();
+        }
+        let mut seeds = Vec::new();
+        let mut is_range = false;
+        let mut start = 0;
+        for val in waa.iter() {
+            if is_range {
+                seeds.push(Range {
+                    from: start,
+                    to: start + val,
+                });
+                is_range = false;
+            } else {
+                start = *val;
+                is_range = true;
+            }
+        }
+
+        println!("step seeds, amount: {}", seeds.len());
+        let soils = do_block_range(&mut lines, seeds);
+        println!("step soils, amount: {}", soils.len());
+        let fertilizers = do_block_range(&mut lines, soils);
+        println!("step fertilizers");
+        let waters = do_block_range(&mut lines, fertilizers);
+        println!("step waters");
+        let lights = do_block_range(&mut lines, waters);
+        println!("step lights");
+        let temperatures = do_block_range(&mut lines, lights);
+        println!("step temperatures");
+        let humidities = do_block_range(&mut lines, temperatures);
+        println!("step humidities");
+        let locations = do_block_range(&mut lines, humidities);
+        println!("step locations");
+        println!(
+            "day 5 part 2: {}",
+            locations.iter().map(|r| r.from).min().unwrap()
+        );
+    }
+}
+
+fn do_range_map(map_vec: &Vec<(u64, u64, u64)>, val: &Range, outvec: &mut Vec<Range>) {
+    let mut still_range = Some(Range {
+        from: val.from,
+        to: val.to,
+    });
+    for (dest, src, len) in map_vec.iter() {
+        if let Some(sr) = &still_range {
+            let end = src + len;
+            match (sr.from >= *src, sr.from < end, sr.to > *src, sr.to <= end) {
+                (true, true, true, true) => {
+                    println!(
+                        "{:?} completely in range {}, {}, so it's easy",
+                        sr, src, end
+                    );
+                    let new_range = Range {
+                        from: sr.from - src + dest,
+                        to: sr.to - src + dest,
+                    };
+                    still_range = None;
+                    println!(
+                        "range became {:?} (dest is {}), still_range {:?}",
+                        new_range, dest, still_range
+                    );
+                    outvec.push(new_range);
+                }
+                (true, false, true, false) => {} // fully to the right
+                (false, true, false, true) => {} // fully to the left
+                (true, true, true, false) => {
+                    println!("{:?} start is in range {}, {} but end is not", sr, src, end);
+                    let new_range = Range {
+                        from: sr.from - src + dest,
+                        to: dest + len,
+                    };
+                    still_range = Some(Range {
+                        from: end,
+                        to: sr.to,
+                    });
+                    println!(
+                        "range became {:?} (dest is {}), still_range {:?}",
+                        new_range, dest, still_range
+                    );
+                    outvec.push(new_range);
+                }
+                (false, true, true, true) => {
+                    println!("{:?} end is in range {}, {} but start is not", sr, src, end);
+                    let new_range = Range {
+                        from: *dest,
+                        to: dest + sr.to - src,
+                    };
+                    still_range = Some(Range {
+                        from: sr.from,
+                        to: *src,
+                    });
+                    println!(
+                        "range became {:?} (dest is {}), still_range {:?}",
+                        new_range, dest, still_range
+                    );
+                    outvec.push(new_range);
+                }
+                (false, true, true, false) => {
+                    println!(
+                        "{:?} start is before range {}, {} end is after",
+                        sr, src, end
+                    );
+                    let new_range = Range {
+                        from: *dest,
+                        to: dest + len,
+                    };
+                    println!("Adding {:?} for sure", new_range);
+                    outvec.push(new_range);
+                    let left_range = Range {
+                        from: sr.from,
+                        to: *src,
+                    };
+                    println!("Adding Left part {:?}", left_range);
+                    do_range_map(map_vec, &left_range, outvec);
+                    println!("Added Left part");
+                    let right_range = Range {
+                        from: end,
+                        to: sr.to,
+                    };
+                    println!("Adding Right part {:?}", right_range);
+                    do_range_map(map_vec, &right_range, outvec);
+                    println!("Added Right part");
+                    still_range = None;
+                }
+                (false, true, false, false) => {
+                    todo!()
+                }
+                (false, false, true, true) => {
+                    todo!()
+                }
+                (false, false, true, false) => {
+                    todo!()
+                }
+                (false, false, false, true) => {
+                    todo!()
+                }
+                (false, false, false, false) => {
+                    todo!()
+                }
+                (true, false, false, true)
+                | (true, true, false, true)
+                | (true, false, true, true)
+                | (true, false, false, false)
+                | (true, true, false, false) => {
+                    println!(
+                        "Impossible, to is bigger than from {:?}, range is {},{}",
+                        sr, src, end
+                    );
+                    todo!()
+                }
+            };
+        }
+    }
+    println!("left with {:?}", still_range);
+    if let Some(sr) = still_range {
+        outvec.push(sr);
+    }
+}
+
+fn do_block_range(lines: &mut std::io::Lines<BufReader<File>>, in_vec: Vec<Range>) -> Vec<Range> {
+    lines
+        .skip_while(|p| p.as_ref().is_ok_and(|f| f.is_empty()))
+        .next();
+    let mut outvec = Vec::new();
+    let mut map_vec = Vec::new();
+    for ln in lines.take_while(|p| p.as_ref().is_ok_and(|f| !f.is_empty())) {
+        //line is every line with a rule
+        if let Ok(line) = ln {
+            map_vec.push(parse_line(line).unwrap());
+        }
+    }
+
+    for (i, val) in in_vec.iter().enumerate() {
+        do_range_map(&map_vec, val, &mut outvec);
+    }
+    println!("current ranges: {:?}", outvec);
+    return outvec;
+}
+
+fn do_block(lines: &mut std::io::Lines<BufReader<File>>, in_vec: Vec<u64>) -> Vec<u64> {
+    lines
+        .skip_while(|p| p.as_ref().is_ok_and(|f| f.is_empty()))
+        .next();
+    let mut outvec = Vec::new();
+    for val in in_vec.iter() {
+        outvec.push(*val);
+    }
+    for ln in lines.take_while(|p| p.as_ref().is_ok_and(|f| !f.is_empty())) {
+        if let Ok(line) = ln {
+            let (dest, src, len) = parse_line(line).unwrap();
+            for (i, val) in in_vec.iter().enumerate() {
+                if val >= &src && val < &(src + len) {
+                    outvec[i] = dest + val - src;
+                }
+            }
+        }
+    }
+    return outvec;
+}
+
+fn parse_line(line: String) -> Option<(u64, u64, u64)> {
+    if let Some((a, bc)) = line.split_once(" ") {
+        if let Some((b, c)) = bc.split_once(" ") {
+            if let (Ok(x), Ok(y), Ok(z)) = (a.parse(), b.parse(), c.parse()) {
+                return Some((x, y, z));
+            }
+        }
+    }
+    return None;
 }
