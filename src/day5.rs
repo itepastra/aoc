@@ -140,16 +140,13 @@ fn do_range_map(map_vec: &Vec<(u64, u64, u64)>, val: &Range, outvec: &mut Vec<Ra
                     do_range_map(map_vec, &right_range, outvec);
                     still_range = None;
                 }
-                (false, true, false, false)
-                | (false, false, true, true)
-                | (false, false, true, false)
-                | (false, false, false, true)
-                | (false, false, false, false)
-                | (true, false, false, true)
-                | (true, true, false, true)
-                | (true, false, true, true)
-                | (true, false, false, false)
-                | (true, true, false, false) => {
+                (_,_, false, false) // end of range is greater and smaller than the end of the
+                                    // target at the same time
+                | (false, false, _, _) // start of range is greater and smaller than the end of the
+                                       // target at the same time
+                | (true, _, _, true) // the start is larger, end is smaller but middle is not in
+                                     // the range
+                 => {
                     println!(
                         "Impossible situation encountered: {:?}, {}, {} (dest: {})",
                         sr, src, len, dest
