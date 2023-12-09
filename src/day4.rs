@@ -106,7 +106,6 @@ fn dayp2() {
         let mut total = 0;
         for cidx in 0..cards.len() {
             let cc = &cards[cidx];
-            let cn = cc.number;
             let ca = cc.amount;
             total += cc.amount;
             let w = win_amt(cc);
