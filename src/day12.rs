@@ -1,7 +1,10 @@
 use crate::utils::read_lines;
+use std::iter::{repeat, once};
+use std::collections::HashMap;
 
 pub fn day() {
     dayp1();
+    dayp2();
 }
 
 fn dayp1() {
@@ -21,13 +24,53 @@ fn dayp1() {
                         .collect();
                     let line_amounts = streaks.split(",").map(|a| a.parse().unwrap()).collect();
 
-                    println!("Trying {:?}, {:?} with total {}", map, line_amounts, total);
-                    total += get_options(&line_springs, 0, &line_amounts, 0, 0, Spring::Working);
+                    let mut cache = HashMap::new();
+                    //println!("Trying {:?}, {:?} with total {}",map, line_amounts, total);
+                    total += get_options(&line_springs, 0, &line_amounts, 0, 0, Spring::Working, &mut cache);
                 }
             }
         }
     }
     println!("day 12 part 1: {}", total);
+}
+
+fn mknice(line: &Vec<Spring>) -> String {
+   let str = line.iter().map(|s| match s {
+    Spring::Unknown => '?',
+    Spring::Broken => '#',
+    Spring::Working => '.',
+   }).collect(); 
+    return str
+}
+
+
+fn dayp2() {
+    let mut total = 0;
+    if let Ok(lines) = read_lines("data/day12.txt") {
+        for line in lines {
+            if let Ok(ip) = line {
+                if let Some((map, streaks)) = ip.split_once(" ") {
+                    let mut line_springs: Vec<_> = repeat(map
+                        .chars()
+                        .map(|c| match c {
+                            '#' => Spring::Broken,
+                            '.' => Spring::Working,
+                            '?' => Spring::Unknown,
+                            _ => todo!(),
+                        }).chain(once(Spring::Unknown))).take(5).flatten()
+                        .collect();
+                    //Pop the extra "unknown" at the end
+                    let _ = line_springs.pop();
+                    let line_amounts = repeat(streaks.split(",").map(|a| a.parse().unwrap())).take(5).flatten().collect();
+
+                    let mut cache = HashMap::new();
+                    //println!("Trying {:?}, {:?} with total {}", mknice(&line_springs), line_amounts, total);
+                    total += get_options(&line_springs, 0, &line_amounts, 0, 0, Spring::Working, &mut cache);
+                }
+            }
+        }
+    }
+    println!("day 12 part 2: {}", total);
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -44,30 +87,35 @@ fn get_options(
     broken_streak: usize,
     broken_parts_since_last: usize,
     prev: Spring,
+    cache: &mut HashMap<(usize, usize, usize), usize>,
 ) -> usize {
-    println!("{:?}, at pos {}, at streak {},with n in streak {}", line, pos,  broken_streak, broken_parts_since_last);
+    match cache.get(&(pos, broken_streak, broken_parts_since_last)) {
+        Some(amt) => { //println!("found in cache for {:?}, {}", line, amt); 
+            return *amt;},
+        None => {}
+    }
     if broken_streak >= broken_streaks.len() && broken_parts_since_last != 0 {
-        println!("too many streaks... F {:?}", line);
+        cache.insert((pos, broken_streak, broken_parts_since_last), 0);
         return 0;
     }
     
     if pos == line.len() {
         if broken_streak < broken_streaks.len() - 1 {
-            println!("Not all streaks were done");
+        cache.insert((pos, broken_streak, broken_parts_since_last), 0);
             return 0;
         } else if broken_streak == broken_streaks.len() && broken_parts_since_last == 0 {
-            println!("still allowed, since it's cleann {:?}", line);
+        cache.insert((pos, broken_streak, broken_parts_since_last), 1);
             return 1;
         }
-         else if broken_streak >= broken_streaks.len() {
-            println!("too many streaks... F {:?}", line);
+        else if broken_streak >= broken_streaks.len() {
+        cache.insert((pos, broken_streak, broken_parts_since_last), 0);
             return 0;
         }
         else if broken_streaks[broken_streak] != broken_parts_since_last {
-            println!("Something was not allowed about {:?}, {:?}", line, broken_streaks);
+        cache.insert((pos, broken_streak, broken_parts_since_last), 0);
             return 0;
         } else {
-            println!("I think this is allowed {:?}", line);
+        cache.insert((pos, broken_streak, broken_parts_since_last), 1);
             return 1;
         }
     }
@@ -82,11 +130,12 @@ fn get_options(
                 broken_streak,
                 0,
                 Spring::Working,
+                cache,
             );
         }
         (Spring::Working, Spring::Broken) => {
             if broken_parts_since_last != broken_streaks[broken_streak] {
-                println!("{:?}'s streak {} was incorrect", line, broken_streak);
+        cache.insert((pos, broken_streak, broken_parts_since_last), 0);
                 return 0;
             }
             opts = get_options(
@@ -96,6 +145,7 @@ fn get_options(
                 broken_streak + 1,
                 0,
                 Spring::Working,
+                cache,
             );
         }
         (Spring::Broken, Spring::Broken) => {
@@ -106,6 +156,7 @@ fn get_options(
                 broken_streak,
                 broken_parts_since_last + 1,
                 Spring::Broken,
+                cache,
             );
         }
         (Spring::Broken, Spring::Working) => {
@@ -116,6 +167,7 @@ fn get_options(
                 broken_streak,
                 1, // is the first one since it started
                 Spring::Broken,
+                cache,
             );
         }
         (Spring::Unknown, Spring::Broken) => {
@@ -124,14 +176,14 @@ fn get_options(
             let mut l2 = line.clone();
             l2[pos] = Spring::Working;
             if  broken_streak < broken_streaks.len() && broken_parts_since_last != broken_streaks[broken_streak] {
-                println!("{:?} was incorrect, trying only {:?}", l2, l1);
-                return get_options(&l1, pos + 1, broken_streaks, broken_streak, broken_parts_since_last + 1, Spring::Broken);
-            }
+                opts = get_options(&l1, pos + 1, broken_streaks, broken_streak, broken_parts_since_last + 1, Spring::Broken, cache,);
+            } else {
             opts = 
                 // unknown == broken
-                get_options(&l1, pos + 1, broken_streaks, broken_streak, broken_parts_since_last + 1, Spring::Broken) + 
+                get_options(&l1, pos + 1, broken_streaks, broken_streak, broken_parts_since_last + 1, Spring::Broken,cache,) + 
                 // unknown == working
-                get_options(&l2, pos + 1, broken_streaks, broken_streak + 1, 0, Spring::Working);
+                get_options(&l2, pos + 1, broken_streaks, broken_streak + 1, 0, Spring::Working,cache,);
+            }
         }
         (Spring::Unknown, Spring::Working) => {
             let mut l1 = line.clone();
@@ -140,14 +192,15 @@ fn get_options(
             l2[pos] = Spring::Working;
             opts = 
                 // unknown == broken
-                get_options(&l1, pos + 1, broken_streaks, broken_streak, 1, Spring::Broken) + 
+                get_options(&l1, pos + 1, broken_streaks, broken_streak, 1, Spring::Broken,cache,) + 
                 // unknown == working
-                get_options(&l2, pos + 1, broken_streaks, broken_streak, 0, Spring::Working);
+                get_options(&l2, pos + 1, broken_streaks, broken_streak, 0, Spring::Working,cache,);
         }
         _ => {
             todo!()
         }
     }
+    cache.insert((pos, broken_streak, broken_parts_since_last), opts);
 
     return opts;
 }
