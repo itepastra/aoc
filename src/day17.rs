@@ -81,6 +81,7 @@ fn dayp2() {
                                        // down
     nodes.insert(start2, (0, 0));
     unvisited.push(start, 0);
+    unvisited.push(start2, 0);
 
     while unvisited.len() > 0 {
         let (curr, ct) = unvisited.pop_min().unwrap();
