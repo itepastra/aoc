@@ -37,7 +37,7 @@ pub fn day() {
                 }
                 match dir2 {
                     Ok(0) => {
-                        surf2 += x2 * y2  - (x2 + dist) * y2;
+                        surf2 += x2 * y2 - (x2 + dist) * y2;
                         x2 += dist;
                     }
                     Ok(1) => {
@@ -45,7 +45,7 @@ pub fn day() {
                         y2 += dist;
                     }
                     Ok(2) => {
-                        surf2 += x2 * y2  - (x2 - dist) * y2;
+                        surf2 += x2 * y2 - (x2 - dist) * y2;
                         x2 -= dist;
                     }
                     Ok(3) => {
@@ -60,7 +60,10 @@ pub fn day() {
         }
         surf += y * -x;
         println!("day 18 part 1: {}", surf / 2 + 1 + exterior / 2);
-        println!("day 18 part 2: {}", (surf2 + y2 * -x2) / 2 + 1 + exterior2 / 2);
+        println!(
+            "day 18 part 2: {}",
+            (surf2 + y2 * -x2) / 2 + 1 + exterior2 / 2
+        );
     }
 }
 
